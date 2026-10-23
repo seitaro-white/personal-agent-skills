@@ -1,0 +1,9 @@
+{
+  "name": "personal-skills",
+  "version": "0.1.0",
+  "description": "Personal planning and review skills for Pi",
+  "keywords": ["pi-package"],
+  "pi": {
+    "skills": ["./skills"]
+  }
+}
