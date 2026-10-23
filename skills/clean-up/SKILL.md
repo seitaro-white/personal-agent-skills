@@ -18,7 +18,7 @@ Look for:
 - **Responsibility drift and fragmented features.** Look for modules that have accumulated unrelated responsibilities and coherent operations scattered across the codebase. Regroup or extract code around concrete responsibilities that already exist. Avoid replacing straightforward code with a framework or fragmenting it into trivial helpers.
 - **Orphaned artifacts and obsolete transition machinery.** Remove unused code, fixtures, configuration, dependencies, stale documentation, and temporary compatibility paths only when there is evidence they are no longer needed. Check relevant callers, entry points, and compatibility requirements before removal.
 - **Competing conventions or sources of truth.** Align equivalent operations that use inconsistent names, representations, or independently maintained definitions without a meaningful reason. Preserve differences that reflect genuinely different requirements.
-- **Unnecessary scaffolding.** Simplify wrappers, factories, configuration layers, and extension points that have no current purpose and obscure the implementation.
+
 
 These are prompts for judgment, not a mandate to deduplicate or reorganize everything. Inspect broadly, but keep edits focused and justified. Preserve intended behaviour, meaningful test coverage, necessary safeguards, and unrelated user changes. Defer substantial unrelated redesigns rather than expanding the cleanup indefinitely. If no worthwhile changes are warranted, leave the code unchanged.
 
