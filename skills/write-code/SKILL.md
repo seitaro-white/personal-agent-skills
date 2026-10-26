@@ -1,5 +1,5 @@
 ---
-name: clean-engineering
+name: write-code
 description: "Guidelines for writing clean and simple code as the user prefers. Use when writing code of any kind, planning software features, implementating tests, refactoring, or generally doing anything that touches the practice of software engineering."
 metadata:
   author: seitaro-white
