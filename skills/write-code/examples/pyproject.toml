@@ -1,0 +1,18 @@
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "D"]
+# Dunder methods such as __post_init__ are self-explanatory; test names describe tests.
+ignore = ["D105"]
+per-file-ignores = { "tests/*" = ["D"] }
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ty.environment]
+python = ".venv"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
