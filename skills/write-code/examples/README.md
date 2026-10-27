@@ -10,7 +10,8 @@ the task, not the exact dependencies or number of classes.
   `Inventory` owns stock and reservation transitions, with no CLI, persistence
   layer or invented extension points.
 
-The tests in `tests/` describe each example's behaviour.
+`tests/test_order_fulfilment.py` shows the testing style: behaviour through the
+public interface, one rule per test.
 
 ## Running
 
