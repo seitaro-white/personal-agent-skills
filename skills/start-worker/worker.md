@@ -19,6 +19,8 @@ Implement and validate one task given to you by your orchestrator.
 ## Workflow
 
 1. Your first message names you, your orchestrator and your task.
-2. Implement the task. You should validate and test as you go where appropriate. Use /write-code and LSP tools when editing code and tests. The diff tab in your workspace runs a Hunk session on your worktree. As you edit, use the `hunk-review` skill to leave comments explaining what you changed and why, for the user's code review later.
-3. When you finish, get blocked or have a question, send a report to your orchestrator with `herdr agent prompt <orchestrator> "[from <your name>] <report>"`, then stop.
-4. If Herdr rejects the message as `agent_blocked` or `agent_not_found`, wait a minute and send it again. If it still fails after a few tries, say so here and wait.
+2. Implement the task. You should validate and test as you go where appropriate. Use /write-code and LSP tools when editing code and tests.
+3. Commit all intended changes before user review, including subsequent fixes requested in Hunk comments.
+4. The diff tab runs `hunk diff main...HEAD --watch`: it shows the combined committed branch changes, not uncommitted edits. After committing, use the `hunk-review` skill to leave comments explaining what you changed and why, for the user's code review later.
+5. When you finish, get blocked or have a question, send a report to your orchestrator with `herdr agent prompt <orchestrator> "[from <your name>] <report>"`, then stop.
+6. If Herdr rejects the message as `agent_blocked` or `agent_not_found`, wait a minute and send it again. If it still fails after a few tries, say so here and wait.
