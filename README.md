@@ -36,8 +36,10 @@ Pi loads local packages in place without copying them, so this is useful when ed
 - `create-plan`
 - `draft-plan`
 - `grill-me`
+- `hand-off`
 - `review-changes`
 - `review-plan`
+- `start-worker`
 
 ## Manage the installation
 
