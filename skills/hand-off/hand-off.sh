@@ -24,7 +24,7 @@ ORCHESTRATOR_EXTENSIONS=(
   "$PI_MODULES/pi-calm/extensions/calm/index.ts"
   "$PI_MODULES/pi-claude-bridge/src/index.ts"
   "$PI_MODULES/@danielgap/pi-claude-usage/extensions/claude_usage.ts"
-  "$PI_MODULES/pi-context/src/context.ts"
+  "$PI_MODULES/pi-context-view/src/index.ts"
   "$PI_MODULES/@narumitw/pi-usage/dist/index.ts"
   "$PI_MODULES/@juicesharp/rpiv-todo/index.ts"
   "$PI_MODULES/pi-stretchtext/index.ts"

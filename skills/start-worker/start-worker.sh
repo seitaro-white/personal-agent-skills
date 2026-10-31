@@ -27,7 +27,7 @@ WORKER_EXTENSIONS=(
   "$PI_MODULES/pi-calm/extensions/calm/index.ts"
   "$PI_MODULES/pi-claude-bridge/src/index.ts"
   "$PI_MODULES/@danielgap/pi-claude-usage/extensions/claude_usage.ts"
-  "$PI_MODULES/pi-context/src/context.ts"
+  "$PI_MODULES/pi-context-view/src/index.ts"
 )
 WORKER_PROFILE="$(cd "$(dirname "$0")" && pwd)/worker.md"
 REPO_ROOT=$(git rev-parse --show-toplevel)
