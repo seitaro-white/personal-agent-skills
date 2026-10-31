@@ -5,7 +5,7 @@
 #
 # Run from inside the main checkout, in a Herdr pane. Creates three tabs:
 #   agent  Pi worker, launched with the flags below
-#   diff   hunk diff --watch against the worktree's starting commit
+#   diff   hunk diff main...HEAD --watch for committed branch changes
 #   shell  plain shell for servers and ad hoc commands
 # Then sends the worker its name, the orchestrator's name and <task-file>, and
 # prints the worker's agent name.
@@ -60,8 +60,6 @@ print(value)' "$1"
 # --cwd, or Herdr uses the repo of the calling workspace instead of this one.
 created=$(herdr worktree create --cwd "$REPO_ROOT" --branch "$branch" --path "$worktree" --label "$branch" --no-focus)
 workspace=$(field result.workspace.workspace_id <<<"$created")
-# Diff against the starting commit, not main, so later merges to main stay out.
-base=$(git -C "$worktree" rev-parse HEAD)
 herdr tab rename "$(field result.tab.tab_id <<<"$created")" agent >/dev/null
 herdr agent start "$name" --kind pi --pane "$(field result.root_pane.pane_id <<<"$created")" -- \
   --model "$WORKER_MODEL" \
@@ -70,7 +68,7 @@ herdr agent start "$name" --kind pi --pane "$(field result.root_pane.pane_id <<<
   --append-system-prompt "$WORKER_PROFILE" >/dev/null
 
 diff_tab=$(herdr tab create --workspace "$workspace" --cwd "$worktree" --label diff --no-focus)
-herdr pane run "$(field result.root_pane.pane_id <<<"$diff_tab")" "hunk diff $base --watch" >/dev/null
+herdr pane run "$(field result.root_pane.pane_id <<<"$diff_tab")" "hunk diff main...HEAD --watch" >/dev/null
 
 herdr tab create --workspace "$workspace" --cwd "$worktree" --label shell --no-focus >/dev/null
 
