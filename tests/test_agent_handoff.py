@@ -1,4 +1,4 @@
-"""Regression tests for readiness and task pickup, without starting live agents."""
+"""Regression tests for agent launches and handoff, without starting live agents."""
 
 import json
 import os
@@ -12,7 +12,8 @@ SCRIPTS = ("start-worker/start-worker.sh", "hand-off/hand-off.sh")
 
 
 class AgentHandoffTests(unittest.TestCase):
-    def run_handoff(self, script, *, failure="", existing=False):
+    def run_handoff(self, script, *, failure="", existing=False, profiles_set=False, profile_args=None):
+        """Run a launch script against a recording Herdr stub."""
         with tempfile.TemporaryDirectory() as directory:
             cwd = Path(directory)
             subprocess.run(["git", "init", "-q", directory], check=True)
@@ -40,11 +41,20 @@ class AgentHandoffTests(unittest.TestCase):
             args = [str(task)]
             if script.startswith("start-worker/"):
                 args.insert(0, "feature")
+            env = dict(os.environ)
+            env.pop("PI_AGENT_PROFILES", None)
+            if profiles_set:
+                profiles = cwd / "launch profiles"
+                profiles.mkdir()
+                env["PI_AGENT_PROFILES"] = str(profiles)
+                if profile_args is not None:
+                    role = "worker" if script.startswith("start-worker/") else "orchestrator"
+                    (profiles / f"{role}.args").write_text("\n".join(profile_args) + "\n")
             result = subprocess.run(
                 ["bash", str(ROOT / "skills" / script), *args],
                 cwd=cwd,
                 env={
-                    **os.environ,
+                    **env,
                     "PATH": f"{cwd}:{os.environ['PATH']}",
                     "HERDR_WORKSPACE_ID": "w1",
                     "CALL_LOG": str(log),
@@ -58,6 +68,35 @@ class AgentHandoffTests(unittest.TestCase):
             )
             calls = [json.loads(line) for line in log.read_text().splitlines()]
             return result, calls
+
+    def test_launch_profile_arguments_precede_role_prompt_in_file_order(self):
+        profile_args = ["--provider", "test-provider", "-e", "/extensions/path with spaces/index.js"]
+        for script in SCRIPTS:
+            with self.subTest(script=script):
+                result, calls = self.run_handoff(script, profiles_set=True, profile_args=profile_args)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                start = next(call for call in calls if call[:2] == ["agent", "start"])
+                pi_args = start[start.index("--") + 1:]
+                role_prompt = ROOT / "skills" / Path(script).parent / (
+                    "worker.md" if script.startswith("start-worker/") else "orchestrator.md"
+                )
+                self.assertEqual(pi_args, [*profile_args, "--append-system-prompt", str(role_prompt)])
+
+    def test_missing_profile_file_adds_no_launch_arguments(self):
+        for script in SCRIPTS:
+            with self.subTest(script=script):
+                result, calls = self.run_handoff(script, profiles_set=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                start = next(call for call in calls if call[:2] == ["agent", "start"])
+                self.assertEqual(start[start.index("--") + 1:-1], ["--append-system-prompt"])
+
+    def test_unset_profiles_variable_works_under_nounset_without_launch_arguments(self):
+        for script in SCRIPTS:
+            with self.subTest(script=script):
+                result, calls = self.run_handoff(script)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                start = next(call for call in calls if call[:2] == ["agent", "start"])
+                self.assertEqual(start[start.index("--") + 1:-1], ["--append-system-prompt"])
 
     def test_waits_for_readiness_and_confirms_working_before_reporting_success(self):
         for script in SCRIPTS:

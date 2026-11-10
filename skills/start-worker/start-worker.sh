@@ -4,32 +4,18 @@
 # Usage: start-worker.sh <branch> <task-file>
 #
 # Run from inside the main checkout, in a Herdr pane. Creates three tabs:
-#   agent  Pi worker, launched with the flags below
+#   agent  Pi worker, launched with flags from PI_AGENT_PROFILES
 #   diff   hunk diff main...HEAD --watch for committed branch changes
 #   shell  plain shell for servers and ad hoc commands
 # Then sends the worker its name, the orchestrator's name and <task-file>, and
 # prints the worker's agent name.
 set -euo pipefail
 
-# Worker launch flags.
-WORKER_MODEL="openai-codex/gpt-6.1-sol:medium"
-# Only these extensions, plus Pi's built-ins, load; skills load as usual. Paths match each package's
-# pi.extensions entry, so package prompt templates stay out.
-PI_MODULES=/opt/pi/node_modules
-WORKER_EXTENSIONS=(
-  builtin:mcp
-  builtin:llama.cpp
-  builtin:codemode
-  builtin:tool-search
-  "$PI_MODULES/pi-subagents/bundle/index.js"
-  "$PI_MODULES/pi-web-access/dist/index.js"
-  "$PI_MODULES/@narumitw/pi-lsp/dist/index.ts"
-  "$PI_MODULES/pi-calm/extensions/calm/index.ts"
-  "$PI_MODULES/pi-claude-bridge/src/index.ts"
-  "$PI_MODULES/@danielgap/pi-claude-usage/extensions/claude_usage.ts"
-  "$PI_MODULES/pi-context-view/src/index.ts"
-)
-WORKER_PROFILE="$(cd "$(dirname "$0")" && pwd)/worker.md"
+launch_args=()
+if [[ -n ${PI_AGENT_PROFILES:-} && -f $PI_AGENT_PROFILES/worker.args ]]; then
+  mapfile -t launch_args < "$PI_AGENT_PROFILES/worker.args"
+fi
+WORKER_ROLE_PROMPT="$(cd "$(dirname "$0")" && pwd)/worker.md"
 REPO_ROOT=$(git rev-parse --show-toplevel)
 WORKTREE_ROOT="$REPO_ROOT/../worktrees"
 
@@ -41,11 +27,6 @@ name=$(printf 'w-%s' "$branch" | tr 'A-Z' 'a-z' | tr -c 'a-z0-9_-' '-' | cut -c1
 # Same name as hand-off.sh gives the orchestrator, so it survives restarts.
 repo=$(basename "$REPO_ROOT")
 orchestrator=$(printf 'orch-%s' "$repo" | tr 'A-Z' 'a-z' | tr -c 'a-z0-9_-' '-' | cut -c1-32)
-
-extension_args=()
-for extension in "${WORKER_EXTENSIONS[@]}"; do
-  extension_args+=(-e "$extension")
-done
 
 # Print a dotted field from the JSON on stdin, e.g. `field result.tab.tab_id`.
 field() {
@@ -62,10 +43,8 @@ created=$(herdr worktree create --cwd "$REPO_ROOT" --branch "$branch" --path "$w
 workspace=$(field result.workspace.workspace_id <<<"$created")
 herdr tab rename "$(field result.tab.tab_id <<<"$created")" agent >/dev/null
 herdr agent start "$name" --kind pi --pane "$(field result.root_pane.pane_id <<<"$created")" -- \
-  --model "$WORKER_MODEL" \
-  --no-extensions \
-  "${extension_args[@]}" \
-  --append-system-prompt "$WORKER_PROFILE" >/dev/null
+  "${launch_args[@]}" \
+  --append-system-prompt "$WORKER_ROLE_PROMPT" >/dev/null
 
 diff_tab=$(herdr tab create --workspace "$workspace" --cwd "$worktree" --label diff --no-focus)
 herdr pane run "$(field result.root_pane.pane_id <<<"$diff_tab")" "hunk diff main...HEAD --watch" >/dev/null

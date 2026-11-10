@@ -1,6 +1,6 @@
-# Orchestrator profile
+# Orchestrator role prompt
 
-Started by `hand-off.sh` in this directory; set its flags at the top of that script.
+Started by `hand-off.sh` in this directory; launch flags come from `PI_AGENT_PROFILES`.
 
 ## Role
 
