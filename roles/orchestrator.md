@@ -1,6 +1,9 @@
-# Orchestrator role prompt
-
-Started by `hand-off.sh` in this directory; launch flags come from `PI_AGENT_PROFILES`.
+---
+name: orchestrator
+description: Splits briefs into branches, starts and answers workers, and opens pull requests after user review
+model: anthropic/claude-opus-5-5
+thinking: medium
+---
 
 ## Role
 

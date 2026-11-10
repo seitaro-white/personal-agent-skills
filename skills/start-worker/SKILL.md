@@ -12,7 +12,7 @@ Start one worker per branch. Resolve paths below relative to this skill's direct
 3. From the main checkout, run `<this skill directory>/start-worker.sh <branch> <task-file>`. It creates the worktree with agent, diff and shell tabs, waits for Pi to be idle, sends the task, and confirms the worker is working before printing its agent name. Readiness and task pickup each have a 30-second timeout. If it fails, inspect `herdr agent get <name>` and `herdr agent read <name>` before retrying; the task may already have been delivered.
 4. The worker messages you when it finishes or needs you. Reply with `herdr agent prompt <name> "<reply>"`.
 
-Launch arguments come from `$PI_AGENT_PROFILES/worker.args`, one Pi CLI argument per line (no quoting or comments). If the variable is unset or the file is missing, Pi uses the user's normal settings, plus the worker role prompt.
+The worker's model, thinking level and system prompt come from `roles/worker.md` in this package. Other launch arguments, such as extensions, come from `$PI_AGENT_PROFILES/worker.args`, one Pi CLI argument per line (no quoting or comments); if the variable is unset or the file is missing, Pi uses the user's normal settings.
 
 ## Task format
 

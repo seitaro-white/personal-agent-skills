@@ -49,6 +49,15 @@ Loaded by [pi-subagents](https://github.com/nicobailon/pi-subagents) from `agent
 
 Each sets its model in its frontmatter. Override one per machine with `subagents.agentOverrides.<name>.model` in Pi settings.
 
+## Roles
+
+`roles/` holds the two long-running Herdr agents, in the same frontmatter-and-prompt format as the subagents:
+
+- `orchestrator`: started by `hand-off`. Splits briefs into branches, starts and answers workers, and opens pull requests.
+- `worker`: started by `start-worker`. Implements one branch in its own worktree and runs both reviewer subagents.
+
+The launch scripts read `model` and `thinking` from the frontmatter and pass the body as the system prompt. Machine-specific arguments, such as extension paths, come from `$PI_AGENT_PROFILES/<role>.args`.
+
 ## Manage the installation
 
 ```bash

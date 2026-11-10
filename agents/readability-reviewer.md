@@ -36,7 +36,8 @@ Longer names are fine when they say more. A reader should know what a name holds
 - One name per concept across the codebase, taken from the domain. Match the name existing code already uses.
 - Replace magic numbers with named constants, and boolean or positional arguments with keyword arguments or enums: not `send(order, True)`.
 - Name tests as specifications: `test_rejects_order_when_stock_is_insufficient`.
-- Terraform: snake_case resource labels that do not repeat the type (`aws_s3_bucket.invoice_archive`, not `aws_s3_bucket.s3_bucket`). Cloud resource names follow the project's existing pattern; use hyphens where the provider forbids underscores.
+- Terraform identifiers (resource and data labels, variables, outputs, locals, modules) are snake_case nouns that do not repeat the resource type: `aws_s3_bucket.invoice_archive`, not `aws_s3_bucket.invoice_archive_bucket` or `aws_s3_bucket.s3_bucket`.
+- Cloud-side names (`name`, `bucket`, the `Name` tag) are lowercase and hyphenated as `<project>-<environment>-<purpose>`, built from variables rather than literals: `"${var.project}-${var.environment}-invoice-archive"`. The purpose says what the resource is for, not its type: `invoice-archive`, not `bucket`. Where the provider allows no separator, as with Azure storage accounts, join the parts without one. Flag, do not fix, names likely to exceed length limits (63 characters for S3 and GCE, 24 for Azure storage accounts and Key Vault) and environments hard-coded as literals.
 - Follow the language's conventions, such as PEP 8 casing in Python.
 
 ## Structure rules

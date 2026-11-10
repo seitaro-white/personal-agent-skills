@@ -13,7 +13,10 @@ launch_args=()
 if [[ -n ${PI_AGENT_PROFILES:-} && -f $PI_AGENT_PROFILES/orchestrator.args ]]; then
   mapfile -t launch_args < "$PI_AGENT_PROFILES/orchestrator.args"
 fi
-ORCHESTRATOR_ROLE_PROMPT="$(cd "$(dirname "$0")" && pwd)/orchestrator.md"
+# Model, thinking and system prompt come from the role file.
+ROLES_DIR="$(cd "$(dirname "$0")/../../roles" && pwd)"
+mapfile -d '' -t role_args < <(python3 "$ROLES_DIR/role_launch_args.py" "$ROLES_DIR/orchestrator.md")
+[[ ${#role_args[@]} -gt 0 ]] || { echo "Could not read $ROLES_DIR/orchestrator.md" >&2; exit 1; }
 
 brief_file=$1
 repo=$(basename "$(git rev-parse --show-toplevel)")
@@ -37,7 +40,7 @@ if ! herdr agent get "$name" >/dev/null 2>&1; then
   tab=$(herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd "$PWD" --label "$name" --no-focus)
   herdr agent start "$name" --kind pi --pane "$(field result.root_pane.pane_id <<<"$tab")" -- \
     "${launch_args[@]}" \
-    --append-system-prompt "$ORCHESTRATOR_ROLE_PROMPT" >/dev/null
+    "${role_args[@]}" >/dev/null
   message="You are $name. $message"
 fi
 
