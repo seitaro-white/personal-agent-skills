@@ -21,10 +21,14 @@ def pi_launch_args(calls):
     return start[start.index("--") + 1:]
 
 
+def role_name(script):
+    """Return the role file name (without extension) a launch script uses."""
+    return "worker" if script.startswith("start-worker/") else "orchestrator"
+
+
 def role_launch_args(script, prompt_path):
     """Return the model, thinking and prompt arguments from a launch script's role file."""
-    role = "worker" if script.startswith("start-worker/") else "orchestrator"
-    fields, _ = read_role(ROOT / "roles" / f"{role}.md")
+    fields, _ = read_role(ROOT / "roles" / f"{role_name(script)}.md")
     return build_launch_args(fields, prompt_path)
 
 
@@ -82,8 +86,7 @@ class AgentHandoffTests(unittest.TestCase):
                 profiles.mkdir()
                 env["PI_AGENT_PROFILES"] = str(profiles)
                 if profile_args is not None:
-                    role = "worker" if script.startswith("start-worker/") else "orchestrator"
-                    (profiles / f"{role}.args").write_text("\n".join(profile_args) + "\n")
+                    (profiles / f"{role_name(script)}.args").write_text("\n".join(profile_args) + "\n")
             result = subprocess.run(
                 ["bash", str(ROOT / "skills" / script), *args],
                 cwd=cwd,
@@ -106,8 +109,7 @@ class AgentHandoffTests(unittest.TestCase):
                 self.assertTrue(all("\n" not in arg for arg in launch_args))
                 prompt_path = Path(launch_args[launch_args.index("--append-system-prompt") + 1])
                 self.addCleanup(prompt_path.unlink)
-                role = "worker" if script.startswith("start-worker/") else "orchestrator"
-                _, prompt = read_role(ROOT / "roles" / f"{role}.md")
+                _, prompt = read_role(ROOT / "roles" / f"{role_name(script)}.md")
                 self.assertEqual(prompt_path.read_text(), prompt)
             return result, calls
 

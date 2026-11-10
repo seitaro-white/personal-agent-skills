@@ -7,8 +7,8 @@
 #   agent  Pi worker, launched with roles/worker.md and flags from PI_AGENT_PROFILES
 #   diff   hunk diff main...HEAD --watch for committed branch changes
 #   shell  plain shell for servers and ad hoc commands
-# Then sends the worker its name, the orchestrator's name and <task-file>, and
-# prints the worker's agent name.
+# Then sends the worker its name, the orchestrator's name and the contents of
+# <task-file>, and prints the worker's agent name.
 set -euo pipefail
 
 launch_args=()
@@ -18,8 +18,8 @@ fi
 # Model, thinking and system prompt come from the role file.
 ROLES_DIR="$(cd "$(dirname "$0")/../../roles" && pwd)"
 # Pi reads this at startup; leave it in /tmp after the launch script exits.
-prompt_file=$(mktemp /tmp/pi-role-prompt.XXXXXX)
-mapfile -d '' -t role_args < <(python3 "$ROLES_DIR/role_launch_args.py" "$ROLES_DIR/worker.md" "$prompt_file")
+role_prompt_file=$(mktemp /tmp/pi-role-prompt.XXXXXX)
+mapfile -d '' -t role_args < <(python3 "$ROLES_DIR/role_launch_args.py" "$ROLES_DIR/worker.md" "$role_prompt_file")
 [[ ${#role_args[@]} -gt 0 ]] || { echo "Could not read $ROLES_DIR/worker.md" >&2; exit 1; }
 REPO_ROOT=$(git rev-parse --show-toplevel)
 WORKTREE_ROOT="$REPO_ROOT/../worktrees"

@@ -4,9 +4,9 @@
 # Usage: hand-off.sh <brief-file>
 #
 # Run from inside the main checkout, in a Herdr pane. Sends the brief's contents,
-# so the file can be temporary. The orchestrator is named
-# after the repository and runs in its own tab of the current workspace, so later
-# briefs go to the same one. Prints the orchestrator's agent name.
+# so the file can be temporary. The orchestrator is named after the repository and
+# runs in its own tab of the current workspace, so later briefs go to the same one.
+# Prints the orchestrator's agent name.
 set -euo pipefail
 
 launch_args=()
@@ -16,8 +16,8 @@ fi
 # Model, thinking and system prompt come from the role file.
 ROLES_DIR="$(cd "$(dirname "$0")/../../roles" && pwd)"
 # Pi reads this at startup; leave it in /tmp after the launch script exits.
-prompt_file=$(mktemp /tmp/pi-role-prompt.XXXXXX)
-mapfile -d '' -t role_args < <(python3 "$ROLES_DIR/role_launch_args.py" "$ROLES_DIR/orchestrator.md" "$prompt_file")
+role_prompt_file=$(mktemp /tmp/pi-role-prompt.XXXXXX)
+mapfile -d '' -t role_args < <(python3 "$ROLES_DIR/role_launch_args.py" "$ROLES_DIR/orchestrator.md" "$role_prompt_file")
 [[ ${#role_args[@]} -gt 0 ]] || { echo "Could not read $ROLES_DIR/orchestrator.md" >&2; exit 1; }
 
 brief_file=$1
