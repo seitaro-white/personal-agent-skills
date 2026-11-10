@@ -3,7 +3,7 @@ name: readability-reviewer
 description: Renames vague identifiers and flattens nested logic in a branch's changes, without changing behaviour
 tools: read, grep, find, ls, edit, write, bash, contact_supervisor
 model: anthropic/claude-haiku-5-5
-thinking: low
+thinking: medium
 acceptanceRole: writer
 systemPromptMode: replace
 inheritProjectContext: true
