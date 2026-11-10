@@ -11,6 +11,19 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ("start-worker/start-worker.sh", "hand-off/hand-off.sh")
 
 
+def pi_launch_args(calls):
+    """Return the Pi arguments from the recorded agent launch."""
+    start = next(call for call in calls if call[:2] == ["agent", "start"])
+    return start[start.index("--") + 1:]
+
+
+def role_prompt_path(script):
+    """Return the role prompt paired with a launch script."""
+    return ROOT / "skills" / Path(script).parent / (
+        "worker.md" if script.startswith("start-worker/") else "orchestrator.md"
+    )
+
+
 class AgentHandoffTests(unittest.TestCase):
     def run_handoff(self, script, *, failure="", existing=False, profiles_set=False, profile_args=None):
         """Run a launch script against a recording Herdr stub."""
@@ -75,28 +88,21 @@ class AgentHandoffTests(unittest.TestCase):
             with self.subTest(script=script):
                 result, calls = self.run_handoff(script, profiles_set=True, profile_args=profile_args)
                 self.assertEqual(result.returncode, 0, result.stderr)
-                start = next(call for call in calls if call[:2] == ["agent", "start"])
-                pi_args = start[start.index("--") + 1:]
-                role_prompt = ROOT / "skills" / Path(script).parent / (
-                    "worker.md" if script.startswith("start-worker/") else "orchestrator.md"
+                self.assertEqual(
+                    pi_launch_args(calls),
+                    [*profile_args, "--append-system-prompt", str(role_prompt_path(script))],
                 )
-                self.assertEqual(pi_args, [*profile_args, "--append-system-prompt", str(role_prompt)])
 
-    def test_missing_profile_file_adds_no_launch_arguments(self):
+    def test_missing_launch_profile_works_under_nounset_with_only_role_prompt(self):
         for script in SCRIPTS:
-            with self.subTest(script=script):
-                result, calls = self.run_handoff(script, profiles_set=True)
-                self.assertEqual(result.returncode, 0, result.stderr)
-                start = next(call for call in calls if call[:2] == ["agent", "start"])
-                self.assertEqual(start[start.index("--") + 1:-1], ["--append-system-prompt"])
-
-    def test_unset_profiles_variable_works_under_nounset_without_launch_arguments(self):
-        for script in SCRIPTS:
-            with self.subTest(script=script):
-                result, calls = self.run_handoff(script)
-                self.assertEqual(result.returncode, 0, result.stderr)
-                start = next(call for call in calls if call[:2] == ["agent", "start"])
-                self.assertEqual(start[start.index("--") + 1:-1], ["--append-system-prompt"])
+            for profiles_set in (False, True):
+                with self.subTest(script=script, profiles_set=profiles_set):
+                    result, calls = self.run_handoff(script, profiles_set=profiles_set)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(
+                        pi_launch_args(calls),
+                        ["--append-system-prompt", str(role_prompt_path(script))],
+                    )
 
     def test_waits_for_readiness_and_confirms_working_before_reporting_success(self):
         for script in SCRIPTS:
