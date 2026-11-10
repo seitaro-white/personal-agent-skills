@@ -56,7 +56,7 @@ Each sets its model in its frontmatter. Override one per machine with `subagents
 - `orchestrator`: started by `hand-off`. Splits briefs into branches, starts and answers workers, and opens pull requests.
 - `worker`: started by `start-worker`. Implements one branch in its own worktree and runs both reviewer subagents.
 
-The launch scripts read `model` and `thinking` from the frontmatter and pass the body as the system prompt. Machine-specific arguments, such as extension paths, come from `$PI_AGENT_PROFILES/<role>.args`.
+The launch scripts read `model` and `thinking` from the frontmatter and pass the body through a temporary prompt file in `/tmp` (left in place for Pi to read at startup). Machine-specific arguments, such as extension paths, come from `$PI_AGENT_PROFILES/<role>.args`.
 
 ## Manage the installation
 

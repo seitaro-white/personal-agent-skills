@@ -1,9 +1,10 @@
-"""Print the Pi launch arguments for a role file, NUL-separated.
+"""Write a role file's prompt body to a file and print the Pi launch arguments, NUL-separated.
 
 A role file is markdown with `key: value` frontmatter (`model`, `thinking`)
-and the role's system prompt as its body.
+and the role's system prompt as its body. The body, without frontmatter, is
+written to <prompt-file>, which Pi reads via --append-system-prompt.
 
-Usage: python3 role_launch_args.py <role-file>
+Usage: python3 role_launch_args.py <role-file> <prompt-file>
 """
 
 import sys
@@ -19,16 +20,18 @@ def read_role(role_path: Path) -> tuple[dict[str, str], str]:
     return {key.strip(): value.strip() for key, value in fields.items()}, body.strip()
 
 
-def build_launch_args(fields: dict[str, str], prompt: str) -> list[str]:
-    """Turn role fields into Pi CLI arguments, skipping fields that are unset."""
-    launch_args = []
+def build_launch_args(fields: dict[str, str], prompt_path: str) -> list[str]:
+    """Turn role fields and a prompt file path into Pi CLI arguments."""
+    model_and_thinking_args = []
     if "model" in fields:
-        launch_args += ["--model", fields["model"]]
+        model_and_thinking_args += ["--model", fields["model"]]
     if "thinking" in fields:
-        launch_args += ["--thinking", fields["thinking"]]
-    return [*launch_args, "--append-system-prompt", prompt]
+        model_and_thinking_args += ["--thinking", fields["thinking"]]
+    return [*model_and_thinking_args, "--append-system-prompt", prompt_path]
 
 
 if __name__ == "__main__":
     fields, prompt = read_role(Path(sys.argv[1]))
-    sys.stdout.write("\0".join(build_launch_args(fields, prompt)) + "\0")
+    prompt_path = Path(sys.argv[2])
+    prompt_path.write_text(prompt)
+    sys.stdout.write("\0".join(build_launch_args(fields, str(prompt_path))) + "\0")
