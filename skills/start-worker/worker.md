@@ -1,6 +1,6 @@
-# Worker profile
+# Worker role prompt
 
-Started by `start-worker.sh` in this directory; set its flags at the top of that script.
+Started by `start-worker.sh` in this directory; launch flags come from `PI_AGENT_PROFILES`.
 
 ## Role
 
