@@ -72,7 +72,9 @@ herdr pane run "$(field result.root_pane.pane_id <<<"$diff_tab")" "hunk diff mai
 
 herdr tab create --workspace "$workspace" --cwd "$worktree" --label shell --no-focus >/dev/null
 
+# Starting Pi is not enough: wait for input readiness, then confirm task pickup.
+herdr agent wait "$name" --until idle --timeout 30000 >/dev/null
 herdr agent prompt "$name" "You are $name. Your orchestrator is $orchestrator.
 
-$(cat "$task_file")" >/dev/null
+$(cat "$task_file")" --wait --until working --timeout 30000 >&2
 echo "$name"

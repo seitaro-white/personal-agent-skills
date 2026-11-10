@@ -9,7 +9,7 @@ Hand off one brief at a time; later briefs go to the same orchestrator. Resolve 
 
 1. Check `test "${HERDR_ENV:-}" = 1`. If it fails, say you are not running inside Herdr and stop.
 2. Write the brief to `plans/<name>/plan.md` in the project root in the format below, or reuse an existing plan there. Use a short filename-safe `<name>`. Confirm the brief with the user before handing it off.
-3. From the main checkout, run `<this skill directory>/hand-off.sh plans/<name>/plan.md`. It starts the orchestrator in its own tab if none is running, sends it the brief's path, and prints its agent name.
+3. From the main checkout, run `<this skill directory>/hand-off.sh plans/<name>/plan.md`. It starts the orchestrator in its own tab if none is running, waits until it is idle or done, sends it the brief's path, and confirms it is working before printing its agent name. Readiness and brief pickup each have a 30-second timeout. If it fails, inspect `herdr agent get <name>` and `herdr agent read <name>` before retrying; the brief may already have been delivered.
 4. Tell the user the agent name. Do not follow up with the orchestrator; the user talks to it in its tab.
 
 ## Brief format

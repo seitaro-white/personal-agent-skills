@@ -9,7 +9,7 @@
 set -euo pipefail
 
 # Orchestrator launch flags.
-ORCHESTRATOR_MODEL="claude-bridge/claude-opus-5-5:high"
+ORCHESTRATOR_MODEL="claude-bridge/claude-opus-5-5:medium"
 # Only these extensions, plus Pi's built-ins, load; skills load as usual. Paths match each package's
 # pi.extensions entry, so package prompt templates stay out.
 PI_MODULES=/opt/pi/node_modules
@@ -62,5 +62,7 @@ if ! herdr agent get "$name" >/dev/null 2>&1; then
   message="You are $name. $message"
 fi
 
-herdr agent prompt "$name" "$message" >/dev/null
+# Starting Pi is not enough: wait for input readiness, then confirm brief pickup.
+herdr agent wait "$name" --until idle --until done --timeout 30000 >/dev/null
+herdr agent prompt "$name" "$message" --wait --until working --timeout 30000 >&2
 echo "$name"
