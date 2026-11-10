@@ -1,6 +1,6 @@
 # Personal Agent Skills
 
-Personal planning and review skills packaged for [Pi](https://pi.dev).
+Personal planning, review and agent workflow skills packaged for [Pi](https://pi.dev).
 
 ## Install in Pi
 
@@ -33,13 +33,21 @@ Pi loads local packages in place without copying them, so this is useful when ed
 ## Included skills
 
 - `clean-up`
-- `create-plan`
-- `draft-plan`
 - `grill-me`
 - `hand-off`
+- `plan`
 - `review-changes`
-- `review-plan`
 - `start-worker`
+- `write-code`
+
+## Included subagents
+
+Loaded by [pi-subagents](https://github.com/nicobailon/pi-subagents) from `agents/`. Workers run them on their changes before user review.
+
+- `readability-reviewer`: renames vague identifiers and flattens nested logic, without changing behaviour. Edits files.
+- `quality-reviewer`: checks correctness, bugs, duplication and unneeded complexity. Read-only; returns findings.
+
+Each sets its model in its frontmatter. Override one per machine with `subagents.agentOverrides.<name>.model` in Pi settings.
 
 ## Manage the installation
 

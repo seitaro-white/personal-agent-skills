@@ -119,7 +119,7 @@ class AgentHandoffTests(unittest.TestCase):
                 self.assertEqual(calls[prompt][-5:], ["--wait", "--until", "working", "--timeout", "30000"])
                 self.assertEqual(calls[wait][2], calls[prompt][2])
                 self.assertEqual(result.stdout, calls[prompt][2] + "\n")
-                self.assertIn("Implement the task." if script.startswith("start-worker/") else "New brief:", calls[prompt][3])
+                self.assertIn("Implement the task.", calls[prompt][3])
 
     def test_readiness_failure_does_not_send_task_or_report_success(self):
         for script in SCRIPTS:

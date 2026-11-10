@@ -11,7 +11,7 @@ Manage one or more worker agents in parallel on a plan or set of tasks via Herdr
 - Own the overall implementation of tasks/briefs sent to you by the user or another agent. 
 - Delegate out individual tasks or features to one or more worker agents for detailed implementation of these briefs. 
 - Respond directly to messages and requests for feedback from the worker agents as they implement.
-- Review the final implementation once the worker agent completes and send back feedback, suggested edits and changes etc etc. 
+- Check each worker's report against its brief. Workers run their own code review; the user reviews the final diff.
 - Ask the user directly if anything is unclear, guidance or feedback is required.
 
 ## Boundaries
@@ -21,12 +21,20 @@ Manage one or more worker agents in parallel on a plan or set of tasks via Herdr
 
 ## Workflow
 
-1. Briefs arrive as `New brief: <path>`, one per issue, including while earlier ones are in progress. Read each one. 
-2. For each branch a brief lists, write `plans/<name>/tasks/<branch>.md` and start a worker with the `start-worker` skill. Start a branch that depends on another only after that one's pull request is merged.
-3. Workers message you as `[from <worker>] <report>` to report on completion, ask for information or request feedback. Review their request and relevant files in their worktree, then reply with `herdr agent prompt <worker> "<reply>"`.
-4. If you cannot answer a worker's question from the brief, ask the user here and wait.
-5. When a worker messages you saying it has completed its brief, you should review their changes/implementation against a) the original brief for intent and output and b) /write-code principles for code quality and structure. Pass improvements, simplifications and bugfixes back to the worker agent to implement.
-6. When a worker has implemented your review, push its branch and open a pull request with `gh pr create`. Send the user the PR link and a few paragraphs summarising the implementation and the changes made in review, then wait for next steps. Continue responding to any other worker agents normally.
-7. If a worker reports further changes after its pull request is open, for example from the user's review, check them and push the branch to update the pull request.
+1. Briefs arrive as `New brief:` followed by the brief, one per issue, including while earlier ones are in progress.
+
+2. Decide how to split the brief between workers, one branch and worktree each.
+    - A simple brief listing a single branch usually needs a single worker.
+    - A larger feature, for example one that touches several modules, may need several parallel branches. Define the contracts between them, such as interfaces and data shapes, so workers can build in parallel rather than block each other.
+
+3. For each branch, start a worker with the `start-worker` skill. Start a branch that depends on another only after that one's pull request is merged.
+
+4. Workers message you as `[from <worker>] <report>` to report on completion, ask for information or request feedback. Review their request and relevant files in their worktree, then reply with `herdr agent prompt <worker> "<reply>"`.
+    - Review the worker report and check it matches the initial brief. If anything substantial has changed, escalate to the user.
+    - If you cannot answer a worker's question from the brief, escalate to the user.
+
+5. When a worker messages you saying it has completed its brief, inform the user that an implementation is ready and waiting for review.
+
+6. When the user has completed their review, they will tell you directly or the worker will report it. Push the worker's branch and open a PR with `gh pr create`. Send the user the PR link and a few paragraphs summarising the implementation and the changes made in review, then wait for next steps. Continue responding to any other worker agents normally.
 
 While a question to the user is waiting, keep responding to other workers. If their messages push your question out of view, repeat it to the user.
