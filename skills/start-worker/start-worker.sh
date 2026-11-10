@@ -4,7 +4,7 @@
 # Usage: start-worker.sh <branch> <task-file>
 #
 # Run from inside the main checkout, in a Herdr pane. Creates three tabs:
-#   agent  Pi worker, launched with flags from PI_AGENT_PROFILES
+#   agent  Pi worker, launched with roles/worker.md and flags from PI_AGENT_PROFILES
 #   diff   hunk diff main...HEAD --watch for committed branch changes
 #   shell  plain shell for servers and ad hoc commands
 # Then sends the worker its name, the orchestrator's name and <task-file>, and
@@ -15,7 +15,10 @@ launch_args=()
 if [[ -n ${PI_AGENT_PROFILES:-} && -f $PI_AGENT_PROFILES/worker.args ]]; then
   mapfile -t launch_args < "$PI_AGENT_PROFILES/worker.args"
 fi
-WORKER_ROLE_PROMPT="$(cd "$(dirname "$0")" && pwd)/worker.md"
+# Model, thinking and system prompt come from the role file.
+ROLES_DIR="$(cd "$(dirname "$0")/../../roles" && pwd)"
+mapfile -d '' -t role_args < <(python3 "$ROLES_DIR/role_launch_args.py" "$ROLES_DIR/worker.md")
+[[ ${#role_args[@]} -gt 0 ]] || { echo "Could not read $ROLES_DIR/worker.md" >&2; exit 1; }
 REPO_ROOT=$(git rev-parse --show-toplevel)
 WORKTREE_ROOT="$REPO_ROOT/../worktrees"
 
@@ -44,7 +47,7 @@ workspace=$(field result.workspace.workspace_id <<<"$created")
 herdr tab rename "$(field result.tab.tab_id <<<"$created")" agent >/dev/null
 herdr agent start "$name" --kind pi --pane "$(field result.root_pane.pane_id <<<"$created")" -- \
   "${launch_args[@]}" \
-  --append-system-prompt "$WORKER_ROLE_PROMPT" >/dev/null
+  "${role_args[@]}" >/dev/null
 
 diff_tab=$(herdr tab create --workspace "$workspace" --cwd "$worktree" --label diff --no-focus)
 herdr pane run "$(field result.root_pane.pane_id <<<"$diff_tab")" "hunk diff main...HEAD --watch" >/dev/null

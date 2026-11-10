@@ -3,11 +3,15 @@
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "roles"))
+from role_launch_args import build_launch_args, read_role
+
 SCRIPTS = ("start-worker/start-worker.sh", "hand-off/hand-off.sh")
 
 
@@ -17,11 +21,22 @@ def pi_launch_args(calls):
     return start[start.index("--") + 1:]
 
 
-def role_prompt_path(script):
-    """Return the role prompt paired with a launch script."""
-    return ROOT / "skills" / Path(script).parent / (
-        "worker.md" if script.startswith("start-worker/") else "orchestrator.md"
-    )
+def role_launch_args(script):
+    """Return the model, thinking and prompt arguments from a launch script's role file."""
+    role = "worker" if script.startswith("start-worker/") else "orchestrator"
+    fields, prompt = read_role(ROOT / "roles" / f"{role}.md")
+    return build_launch_args(fields, prompt)
+
+
+class RoleLaunchArgsTests(unittest.TestCase):
+    def test_role_file_becomes_model_thinking_and_prompt_without_frontmatter(self):
+        with tempfile.TemporaryDirectory() as directory:
+            role_path = Path(directory) / "role.md"
+            role_path.write_text("---\nname: worker\nmodel: provider/model-id\nthinking: high\n---\n\n## Role\n\nDo the task.\n")
+            self.assertEqual(
+                build_launch_args(*read_role(role_path)),
+                ["--model", "provider/model-id", "--thinking", "high", "--append-system-prompt", "## Role\n\nDo the task."],
+            )
 
 
 class AgentHandoffTests(unittest.TestCase):
@@ -82,7 +97,7 @@ class AgentHandoffTests(unittest.TestCase):
             calls = [json.loads(line) for line in log.read_text().splitlines()]
             return result, calls
 
-    def test_launch_profile_arguments_precede_role_prompt_in_file_order(self):
+    def test_launch_profile_arguments_precede_role_arguments_in_file_order(self):
         profile_args = ["--provider", "test-provider", "-e", "/extensions/path with spaces/index.js"]
         for script in SCRIPTS:
             with self.subTest(script=script):
@@ -90,10 +105,10 @@ class AgentHandoffTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(
                     pi_launch_args(calls),
-                    [*profile_args, "--append-system-prompt", str(role_prompt_path(script))],
+                    [*profile_args, *role_launch_args(script)],
                 )
 
-    def test_missing_launch_profile_works_under_nounset_with_only_role_prompt(self):
+    def test_missing_launch_profile_works_under_nounset_with_only_role_arguments(self):
         for script in SCRIPTS:
             for profiles_set in (False, True):
                 with self.subTest(script=script, profiles_set=profiles_set):
@@ -101,7 +116,7 @@ class AgentHandoffTests(unittest.TestCase):
                     self.assertEqual(result.returncode, 0, result.stderr)
                     self.assertEqual(
                         pi_launch_args(calls),
-                        ["--append-system-prompt", str(role_prompt_path(script))],
+                        role_launch_args(script),
                     )
 
     def test_waits_for_readiness_and_confirms_working_before_reporting_success(self):
@@ -119,7 +134,7 @@ class AgentHandoffTests(unittest.TestCase):
                 self.assertEqual(calls[prompt][-5:], ["--wait", "--until", "working", "--timeout", "30000"])
                 self.assertEqual(calls[wait][2], calls[prompt][2])
                 self.assertEqual(result.stdout, calls[prompt][2] + "\n")
-                self.assertIn("Implement the task." if script.startswith("start-worker/") else "New brief:", calls[prompt][3])
+                self.assertIn("Implement the task.", calls[prompt][3])
 
     def test_readiness_failure_does_not_send_task_or_report_success(self):
         for script in SCRIPTS:
