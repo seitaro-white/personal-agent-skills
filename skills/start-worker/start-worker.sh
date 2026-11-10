@@ -17,7 +17,9 @@ if [[ -n ${PI_AGENT_PROFILES:-} && -f $PI_AGENT_PROFILES/worker.args ]]; then
 fi
 # Model, thinking and system prompt come from the role file.
 ROLES_DIR="$(cd "$(dirname "$0")/../../roles" && pwd)"
-mapfile -d '' -t role_args < <(python3 "$ROLES_DIR/role_launch_args.py" "$ROLES_DIR/worker.md")
+# Pi reads this at startup; leave it in /tmp after the launch script exits.
+prompt_file=$(mktemp /tmp/pi-role-prompt.XXXXXX)
+mapfile -d '' -t role_args < <(python3 "$ROLES_DIR/role_launch_args.py" "$ROLES_DIR/worker.md" "$prompt_file")
 [[ ${#role_args[@]} -gt 0 ]] || { echo "Could not read $ROLES_DIR/worker.md" >&2; exit 1; }
 REPO_ROOT=$(git rev-parse --show-toplevel)
 WORKTREE_ROOT="$REPO_ROOT/../worktrees"

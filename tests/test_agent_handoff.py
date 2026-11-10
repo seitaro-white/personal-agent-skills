@@ -21,11 +21,11 @@ def pi_launch_args(calls):
     return start[start.index("--") + 1:]
 
 
-def role_launch_args(script):
+def role_launch_args(script, prompt_path):
     """Return the model, thinking and prompt arguments from a launch script's role file."""
     role = "worker" if script.startswith("start-worker/") else "orchestrator"
-    fields, prompt = read_role(ROOT / "roles" / f"{role}.md")
-    return build_launch_args(fields, prompt)
+    fields, _ = read_role(ROOT / "roles" / f"{role}.md")
+    return build_launch_args(fields, prompt_path)
 
 
 class RoleLaunchArgsTests(unittest.TestCase):
@@ -33,10 +33,16 @@ class RoleLaunchArgsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             role_path = Path(directory) / "role.md"
             role_path.write_text("---\nname: worker\nmodel: provider/model-id\nthinking: high\n---\n\n## Role\n\nDo the task.\n")
-            self.assertEqual(
-                build_launch_args(*read_role(role_path)),
-                ["--model", "provider/model-id", "--thinking", "high", "--append-system-prompt", "## Role\n\nDo the task."],
+            prompt_path = Path(directory) / "prompt.txt"
+            result = subprocess.run(
+                [sys.executable, str(ROOT / "roles" / "role_launch_args.py"), str(role_path), str(prompt_path)],
+                capture_output=True, text=True, check=True,
             )
+            self.assertEqual(
+                result.stdout.split("\0")[:-1],
+                ["--model", "provider/model-id", "--thinking", "high", "--append-system-prompt", str(prompt_path)],
+            )
+            self.assertEqual(prompt_path.read_text(), "## Role\n\nDo the task.")
 
 
 class AgentHandoffTests(unittest.TestCase):
@@ -95,6 +101,14 @@ class AgentHandoffTests(unittest.TestCase):
                 timeout=10,
             )
             calls = [json.loads(line) for line in log.read_text().splitlines()]
+            if any(call[:2] == ["agent", "start"] for call in calls):
+                launch_args = pi_launch_args(calls)
+                self.assertTrue(all("\n" not in arg for arg in launch_args))
+                prompt_path = Path(launch_args[launch_args.index("--append-system-prompt") + 1])
+                self.addCleanup(prompt_path.unlink)
+                role = "worker" if script.startswith("start-worker/") else "orchestrator"
+                _, prompt = read_role(ROOT / "roles" / f"{role}.md")
+                self.assertEqual(prompt_path.read_text(), prompt)
             return result, calls
 
     def test_launch_profile_arguments_precede_role_arguments_in_file_order(self):
@@ -105,7 +119,7 @@ class AgentHandoffTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(
                     pi_launch_args(calls),
-                    [*profile_args, *role_launch_args(script)],
+                    [*profile_args, *role_launch_args(script, pi_launch_args(calls)[-1])],
                 )
 
     def test_missing_launch_profile_works_under_nounset_with_only_role_arguments(self):
@@ -116,7 +130,7 @@ class AgentHandoffTests(unittest.TestCase):
                     self.assertEqual(result.returncode, 0, result.stderr)
                     self.assertEqual(
                         pi_launch_args(calls),
-                        role_launch_args(script),
+                        role_launch_args(script, pi_launch_args(calls)[-1]),
                     )
 
     def test_waits_for_readiness_and_confirms_working_before_reporting_success(self):
